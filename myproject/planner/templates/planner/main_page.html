@@ -1,0 +1,364 @@
+{% load static %}
+{% load dict_extras %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>여행 플래너 - 메인페이지</title>
+  <!-- Bootstrap CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- 사용자 정의 CSS -->
+  <link rel="stylesheet" href="{% static 'css/main_page.css' %}">
+  <style>
+    .error-message {
+      color: red;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .region-card {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .region-card img {
+      width: 100%;
+      height: auto;
+      max-height: 150px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+    .region-name {
+      margin-top: 5px;
+      font-weight: bold;
+    }
+    .main-container {
+      max-width: 1140px; /* 원하는 최대 너비 */
+      margin: 0 auto;
+    }
+    /* 캐러셀 관련 */
+    #carouselExampleIndicators {
+      margin-bottom: 30px;
+    }
+    #carouselExampleIndicators .carousel-inner img {
+      height: 400px;
+      width: 100%;
+      object-fit: contain;
+      background-color: #f8f9fa;
+    }
+    /* "하루 동안 보지 않기" 체크박스와 문구 */
+    .form-check-inline {
+      display: inline-flex;
+      align-items: center;
+      margin-right: auto; /* 왼쪽 정렬 */
+    }
+    .form-check-label {
+      margin: 0 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- 네비게이션 바 -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+      <!-- 로고/브랜드 -->
+      <a class="navbar-brand" href="{% url 'main_page' %}">
+        <img src="{% static 'images/logo4.png' %}" alt="Logo" style="height: 50px;">
+      </a>
+      <!-- 토글 버튼 -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+              data-bs-target="#navbarNav" aria-controls="navbarNav"
+              aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <!-- 메뉴 -->
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <!-- 이용방법 모달 오픈 트리거 (직접 클릭 시 모달 표시) -->
+            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#usageModal">이용방법</a>
+          </li>
+          <li class="nav-item">
+            {% if request.session.user_email %}
+              <a class="nav-link" href="{% url 'feed_main' %}">커뮤니티</a>
+            {% else %}
+              <a class="nav-link" href="#" onclick="alert('로그인 후 이용해 주세요.'); return false;">커뮤니티</a>
+            {% endif %}
+          </li>
+          {% if request.session.user_email %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                 data-bs-toggle="dropdown" aria-expanded="false">
+                {{ request.session.user_name }}님
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <li><a class="dropdown-item" href="{% url 'my_page' %}">마이페이지</a></li>
+                <li><a class="dropdown-item" href="{% url 'logout' %}">로그아웃</a></li>
+              </ul>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">로그인</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 이용방법 모달 -->
+  <div class="modal fade" id="usageModal" tabindex="-1" aria-labelledby="usageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 800px;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title text-center w-100" id="usageModalLabel">이용방법</h3>
+          <!-- 오른쪽 상단 X 버튼으로만 닫기 가능 -->
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body text-center">
+          <!-- 중앙 로고 -->
+          <img src="{% static 'images/logo4.png' %}" alt="Logo" class="img-fluid"
+               style="max-width:150px; margin-bottom:20px;">
+          <!-- 인덱스가 부여된 이용방법 목록 -->
+          <ol class="text-start">
+            <li>로그인 후, 원하는 국내 여행지를 검색 또는 선택합니다.</li>
+            <li>여행 제목을 입력하고 여행 일정을 선택합니다.</li>
+            <li>원하는 장소를 검색하고 장소를 여행 일정에 담습니다.</li>
+            <li>챗봇은 여러분을 위한 chat GPT기반의 여행 도우미이므로, 충분한 학습이 필요합니다.</li>
+            <li>
+              <b><span class="notice">*주의*</span> 챗봇에게 명령을 내릴 때는, 구체적인 장소와 상황을 설명해야 합니다!</b><br>
+              <i>나쁜 예시) <span class="example-text">맛집 추천 좀 → x</span><br>
+              좋은 예시) <span class="example-text">너는 유명한 대한민국 관광 가이드야.<br>&emsp;&emsp;&emsp;&emsp;&emsp;1박 2일동안 부산 서면에 볼만한 유명한 관광지를 추천해줘.</span></i>
+            </li>
+            <li>일정을 저장하고 나면 마이페이지에서 여행 일정을 확인할 수 있습니다.</li>
+            <li>커뮤니티 기능을 통해 다른 사용자와 여행 경험을 공유하세요!</li>
+          </ol>
+        </div>
+        <div class="modal-footer">
+          <!-- 체크박스 (하루 동안 보지 않기) -->
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="hideOneDayCheck">
+            <label class="form-check-label" for="hideOneDayCheck">하루 동안 보지 않기</label>
+          </div>
+          <!-- 하단 닫기 버튼 제거됨. 모달 닫기는 상단 X 버튼만 사용 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 첫 번째 섹션: 인기 여행지 Top5 + 검색창 -->
+  <section class="main-container">
+    <p class="tour-title mt-3">인기 여행지 Top5</p>
+    <p class="tour-description">여행 플래너 유저들이 뽑은 인기 국내 여행지 Top5를 소개합니다!</p>
+
+    <!-- 캐러셀 -->
+    <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
+      <div class="carousel-indicators">
+        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2"></button>
+        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="3"></button>
+        <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="4"></button>
+      </div>
+      <div class="carousel-inner">
+        <div class="carousel-item active">
+          <img src="{% static 'images/regions/seoul1.jpg' %}" class="d-block w-100" alt="Slide 1">
+        </div>
+        <div class="carousel-item">
+          <img src="{% static 'images/regions/busan1.jpg' %}" class="d-block w-100" alt="Slide 2">
+        </div>
+        <div class="carousel-item">
+          <img src="{% static 'images/regions/jeju1.jpg' %}" class="d-block w-100" alt="Slide 3">
+        </div>
+        <div class="carousel-item">
+          <img src="{% static 'images/regions/chuncheon1.jpg' %}" class="d-block w-100" alt="Slide 4">
+        </div>
+        <div class="carousel-item">
+          <img src="{% static 'images/regions/yeosu1.jpg' %}" class="d-block w-100" alt="Slide 5">
+        </div>
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+      </button>
+    </div>
+
+    <!-- 검색창 -->
+    <div class="container mt-5">
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="input-group">
+            <input type="text" id="travelSearchInput" class="form-control" placeholder="여행지를 입력하세요. ex) 여수, 춘천 등">
+            <button class="btn btn-outline-secondary" id="travelSearchBtn" type="button">검색</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 두 번째 섹션: 국내 여행 목록 -->
+  <section class="main-container">
+    <p class="tour-title">국내 여행</p>
+    <p class="tour-description">한국인들이 사랑하는 국내 여행지</p>
+    <div class="row">
+      {% for region in regions %}
+        <div class="col-md-4 col-sm-6">
+          <div class="region-card">
+            <a class="region-link" href="{% url 'plan_schedule' %}?destination={{ region.name }}">
+              <img src="{% static 'images/regions/'|add:region.img %}" alt="{{ region.name }}">
+              <div class="region-name">{{ region.name }}</div>
+            </a>
+          </div>
+        </div>
+        {% if forloop.counter|divisibleby:"3" and not forloop.last %}
+          </div><div class="row">
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- 로그인 모달 -->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="loginForm">
+          <div class="modal-header">
+            <h3 class="modal-title text-center" id="loginModalLabel" style="width: 100%;">로그인</h3>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="loginEmail" class="form-label">이메일</label>
+              <input type="email" class="form-control" id="loginEmail" name="email" required>
+              <div id="loginEmailError" class="error-message">
+                올바른 이메일 형식이 아닙니다. 다시 입력해 주세요.
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label">비밀번호</label>
+              <input type="password" class="form-control" id="loginPassword" name="password" required>
+            </div>
+          </div>
+          <div class="modal-footer d-flex flex-column">
+            <button type="submit" class="btn btn-primary w-100"><b>로그인</b></button>
+            <div class="mt-2">
+              <a href="{% url 'signup' %}">회원가입</a> |
+              <a href="{% url 'password_reset' %}">비밀번호 찾기</a>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="text-center py-3">
+    <img src="{% static 'images/logo4.png' %}" alt="Logo" style="height: 50px;">
+    <p>5팀 송명석 신경환 온인권 천서현 | &copy; Triplan</p>
+  </footer>
+
+  <!-- jQuery & Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    /* --------------------------
+       1) 기존 로그인 로직
+    ---------------------------*/
+    $(document).ready(function(){
+      var emailRegex = /^[\w\.-]+@[\w\.-]+\.\w+$/;
+
+      // 실시간 이메일 검증
+      $("#loginEmail").on("blur keyup", function(){
+        var email = $(this).val();
+        if (!emailRegex.test(email)) {
+          $("#loginEmailError").show();
+        } else {
+          $("#loginEmailError").hide();
+        }
+      });
+
+      // 로그인 폼
+      $("#loginForm").submit(function(event){
+        event.preventDefault();
+        var email = $("#loginEmail").val();
+        if (!emailRegex.test(email)) {
+          $("#loginEmailError").show();
+          return false;
+        }
+        var formData = $(this).serialize();
+        $.ajax({
+          url: "{% url 'login' %}",
+          type: "POST",
+          data: formData,
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          success: function(response){
+            if(response.status === "success"){
+              alert("로그인 성공: " + response.user_name);
+              // 로그인 성공 후 페이지 새로고침
+              location.reload();
+            }
+          },
+          error: function(xhr, status, error){
+            alert("로그인 실패: " + xhr.responseJSON.message);
+          }
+        });
+      });
+
+      // 여행지 검색
+      $("#travelSearchBtn").click(function(){
+        var searchValue = $("#travelSearchInput").val().trim();
+        if(searchValue) {
+          window.location.href = "{% url 'plan_schedule' %}?destination=" + encodeURIComponent(searchValue);
+        } else {
+          alert("검색어를 입력해 주세요.");
+        }
+      });
+    });
+
+
+    /* --------------------------
+       2) "하루 동안 보지 않기" 체크박스 & 쿠키 로직
+       - 로그인 후 (페이지 로드 시), 쿠키 없으면 모달 자동 표시
+       - 모달 닫힘 이벤트(hide.bs.modal) 시에 체크 여부 확인 → 쿠키 생성
+    ---------------------------*/
+
+    // 쿠키 설정 함수
+    function setCookie(name, value, days) {
+      var date = new Date();
+      date.setTime(date.getTime() + (days*24*60*60*1000));
+      var expires = "expires=" + date.toUTCString();
+      document.cookie = name + "=" + value + ";" + expires + ";path=/";
+    }
+    // 쿠키 조회 함수
+    function getCookie(name) {
+      var cookieArr = document.cookie.split(";");
+      for(var i=0; i<cookieArr.length; i++){
+        var cookie = cookieArr[i].trim();
+        if(cookie.indexOf(name+"=") === 0){
+          return cookie.substring(name.length+1);
+        }
+      }
+      return null;
+    }
+
+    $(document).ready(function(){
+      var userLoggedIn = "{{ request.session.user_email|default_if_none:'' }}";
+      // 로그인된 상태 && usageModalHidden 쿠키가 없을 때 자동 표시
+      if(userLoggedIn){
+        var usageCookie = getCookie("usageModalHidden");
+        if(!usageCookie){
+          $("#usageModal").modal("show");
+        }
+      }
+
+      // 모달이 닫힐 때 (X버튼/바깥 클릭 포함) => 체크박스 확인해서 쿠키 설정
+      $("#usageModal").on("hide.bs.modal", function(){
+        if($("#hideOneDayCheck").is(":checked")) {
+          setCookie("usageModalHidden", "true", 1);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
